@@ -5,6 +5,7 @@ import '../../models/produit_solide_model.dart';
 import '../../services/stock_service.dart';
 import '../../services/auth_service.dart';
 import '../stock/stock_liquide_screen.dart';
+import '../stock/stock_solide_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});

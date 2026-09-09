@@ -1,0 +1,313 @@
+import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
+import '../../models/produit_solide_model.dart';
+import '../../models/mouvement_model.dart';
+import '../../services/stock_service.dart';
+import '../../services/auth_service.dart';
+
+class StockSolideScreen extends StatelessWidget {
+  const StockSolideScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final stockService = StockService();
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Stock solide')),
+      body: StreamBuilder<List<ProduitSolideModel>>(
+        stream: stockService.watchStockSolide(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final produits = snapshot.data!;
+
+          if (produits.isEmpty) {
+            return const Center(child: Text('Aucun produit pour le moment.'));
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: produits.length,
+            itemBuilder: (context, index) {
+              final produit = produits[index];
+              return _CarteProduit(produit: produit, stockService: stockService);
+            },
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: AppColors.vertSapin,
+        onPressed: () => _ouvrirFormulaireAjout(context, stockService),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+    );
+  }
+
+  void _ouvrirFormulaireAjout(BuildContext context, StockService stockService) {
+    showDialog(
+      context: context,
+      builder: (_) => _FormulaireProduitSolide(stockService: stockService),
+    );
+  }
+}
+
+class _CarteProduit extends StatelessWidget {
+  final ProduitSolideModel produit;
+  final StockService stockService;
+
+  const _CarteProduit({required this.produit, required this.stockService});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        title: Text(produit.nom, style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Row(
+          children: [
+            Text('${produit.grammage.toStringAsFixed(0)}g · ${produit.usage}'),
+            if (produit.parfume) ...[
+              const SizedBox(width: 6),
+              const Icon(Icons.local_florist, size: 14, color: AppColors.bleuFleur),
+            ],
+          ],
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              '${produit.quantite.toStringAsFixed(0)}',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: produit.enAlerte ? AppColors.danger : AppColors.succes,
+              ),
+            ),
+            if (produit.enAlerte)
+              const Text('Seuil bas', style: TextStyle(fontSize: 10, color: AppColors.danger)),
+          ],
+        ),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const StockSolideScreen()),
+        )
+      ),
+    );
+  }
+
+  void _ouvrirFormulaireMouvement(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => _FormulaireMouvement(produit: produit, stockService: stockService),
+    );
+  }
+}
+
+/// Formulaire d'ajout d'un NOUVEAU produit solide.
+class _FormulaireProduitSolide extends StatefulWidget {
+  final StockService stockService;
+
+  const _FormulaireProduitSolide({required this.stockService});
+
+  @override
+  State<_FormulaireProduitSolide> createState() => _FormulaireProduitSolideState();
+}
+
+class _FormulaireProduitSolideState extends State<_FormulaireProduitSolide> {
+  final _formKey = GlobalKey<FormState>();
+  final _nomController = TextEditingController();
+  final _grammageController = TextEditingController();
+  final _quantiteController = TextEditingController();
+  final _seuilController = TextEditingController();
+  final _usageController = TextEditingController();
+  bool _parfume = false; // état de l'interrupteur, pas un TextEditingController
+  bool _envoi = false;
+
+  Future<void> _enregistrer() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _envoi = true);
+
+    final uid = AuthService().currentUser?.uid ?? '';
+
+    final produit = ProduitSolideModel(
+      id: '',
+      nom: _nomController.text.trim(),
+      grammage: double.parse(_grammageController.text),
+      parfume: _parfume,
+      usage: _usageController.text.trim(),
+      quantite: double.parse(_quantiteController.text),
+      seuilAlerte: double.parse(_seuilController.text),
+      prixUnitaire: 0,
+      prixDeGros: 0,
+      dateMaj: DateTime.now(),
+      majPar: uid,
+    );
+
+    await widget.stockService.ajouterProduitSolide(produit);
+
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Nouveau produit solide'),
+      content: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _nomController,
+                decoration: const InputDecoration(labelText: 'Nom (ex: Curcuma 144)'),
+                validator: (v) => (v == null || v.isEmpty) ? 'Champ requis' : null,
+              ),
+              TextFormField(
+                controller: _grammageController,
+                decoration: const InputDecoration(labelText: 'Grammage (g)'),
+                keyboardType: TextInputType.number,
+                validator: (v) => (v == null || double.tryParse(v) == null) ? 'Nombre invalide' : null,
+              ),
+              TextFormField(
+                controller: _quantiteController,
+                decoration: const InputDecoration(labelText: 'Quantité initiale'),
+                keyboardType: TextInputType.number,
+                validator: (v) => (v == null || double.tryParse(v) == null) ? 'Nombre invalide' : null,
+              ),
+              TextFormField(
+                controller: _seuilController,
+                decoration: const InputDecoration(labelText: 'Seuil d\'alerte'),
+                keyboardType: TextInputType.number,
+                validator: (v) => (v == null || double.tryParse(v) == null) ? 'Nombre invalide' : null,
+              ),
+              TextFormField(
+                controller: _usageController,
+                decoration: const InputDecoration(labelText: 'Usage (ex: Corps)'),
+                validator: (v) => (v == null || v.isEmpty) ? 'Champ requis' : null,
+              ),
+              const SizedBox(height: 8),
+              // SwitchListTile combine un texte + un interrupteur sur une
+              // même ligne, pratique pour un simple booléen dans un formulaire.
+              SwitchListTile(
+                title: const Text('Parfumé'),
+                value: _parfume,
+                activeColor: AppColors.vertSapin,
+                contentPadding: EdgeInsets.zero,
+                onChanged: (valeur) => setState(() => _parfume = valeur),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Annuler')),
+        ElevatedButton(
+          onPressed: _envoi ? null : _enregistrer,
+          child: _envoi
+              ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+              : const Text('Ajouter'),
+        ),
+      ],
+    );
+  }
+}
+
+/// Formulaire pour enregistrer une ENTRÉE ou SORTIE sur un produit existant.
+class _FormulaireMouvement extends StatefulWidget {
+  final ProduitSolideModel produit;
+  final StockService stockService;
+
+  const _FormulaireMouvement({required this.produit, required this.stockService});
+
+  @override
+  State<_FormulaireMouvement> createState() => _FormulaireMouvementState();
+}
+
+class _FormulaireMouvementState extends State<_FormulaireMouvement> {
+  final _formKey = GlobalKey<FormState>();
+  final _quantiteController = TextEditingController();
+  final _motifController = TextEditingController();
+  TypeMouvement _type = TypeMouvement.sortie;
+  bool _envoi = false;
+  String? _erreur;
+
+  Future<void> _enregistrer() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _envoi = true;
+      _erreur = null;
+    });
+
+    final uid = AuthService().currentUser?.uid ?? '';
+
+    try {
+      await widget.stockService.enregistrerMouvementSolide(
+        produit: widget.produit,
+        type: _type,
+        quantite: double.parse(_quantiteController.text),
+        motif: _motifController.text.trim(),
+        effectuePar: uid,
+      );
+      if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      setState(() => _erreur = e.toString().replaceAll('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _envoi = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.produit.nom),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Stock actuel : ${widget.produit.quantite.toStringAsFixed(0)}'),
+            const SizedBox(height: 12),
+            SegmentedButton<TypeMouvement>(
+              segments: const [
+                ButtonSegment(value: TypeMouvement.entree, label: Text('Entrée')),
+                ButtonSegment(value: TypeMouvement.sortie, label: Text('Sortie')),
+              ],
+              selected: {_type},
+              onSelectionChanged: (nouveauSet) => setState(() => _type = nouveauSet.first),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _quantiteController,
+              decoration: const InputDecoration(labelText: 'Quantité'),
+              keyboardType: TextInputType.number,
+              validator: (v) => (v == null || double.tryParse(v) == null) ? 'Nombre invalide' : null,
+            ),
+            TextFormField(
+              controller: _motifController,
+              decoration: const InputDecoration(labelText: 'Motif'),
+              validator: (v) => (v == null || v.isEmpty) ? 'Champ requis' : null,
+            ),
+            if (_erreur != null) ...[
+              const SizedBox(height: 8),
+              Text(_erreur!, style: const TextStyle(color: AppColors.danger, fontSize: 12)),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Annuler')),
+        ElevatedButton(
+          onPressed: _envoi ? null : _enregistrer,
+          child: _envoi
+              ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+              : const Text('Valider'),
+        ),
+      ],
+    );
+  }
+}

@@ -64,32 +64,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // Bloc visuel façon logo
-                  Container(
-                    padding: const EdgeInsets.all(28),
-                    decoration: const BoxDecoration(
-                      color: AppColors.vertSauge,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.eco, size: 36, color: AppColors.vertSapin),
-                        const SizedBox(height: 4),
-                        Text('BONGA',
-                            style: GoogleFonts.fraunces(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 22,
-                              color: AppColors.navy,
-                            )),
-                        Text('savonnerie',
-                            style: GoogleFonts.lora(
-                              fontStyle: FontStyle.italic,
-                              color: AppColors.taupe,
-                              fontSize: 13,
-                            )),
-                      ],
-                    ),
-                  ),
+                  ClipOval(
+  child: Image.asset(
+    'assets/images/logo.jpeg',
+    width: 160,
+    height: 160,
+    // BoxFit.cover : l'image remplit tout le cercle sans se déformer,
+    // quitte à rogner légèrement les bords si le ratio ne correspond
+    // pas exactement à un cercle parfait.
+    fit: BoxFit.cover,
+  ),
+),
                   const SizedBox(height: 40),
 
                   TextField(
