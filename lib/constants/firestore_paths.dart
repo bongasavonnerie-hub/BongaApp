@@ -7,6 +7,6 @@ class FirestorePaths {
   static const String stockLiquide = 'stock_liquide';
   static const String stockSolide = 'stock_solide';
   static const String personnels = 'personnels';
-  static const String mouvements = 'personnels';
+  static const String mouvements = 'mouvements';
 
 }
