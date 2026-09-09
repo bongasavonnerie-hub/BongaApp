@@ -1,1 +1,24 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"bonga-savonnerie","appId":"1:1091473308440:android:55178ec07b2bde804a7c6d","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"bonga-savonnerie","configurations":{"android":"1:1091473308440:android:55178ec07b2bde804a7c6d"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "bonga-savonnerie",
+          "appId": "1:1091473308440:android:55178ec07b2bde804a7c6d",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "bonga-savonnerie",
+          "configurations": {
+            "android": "1:1091473308440:android:55178ec07b2bde804a7c6d"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}
