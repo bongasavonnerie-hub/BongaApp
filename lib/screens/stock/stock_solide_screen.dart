@@ -17,6 +17,19 @@ class StockSolideScreen extends StatelessWidget {
       body: StreamBuilder<List<ProduitSolideModel>>(
         stream: stockService.watchStockSolide(),
         builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'Erreur de chargement : ${snapshot.error}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppColors.danger),
+                ),
+              ),
+            );
+          }
+
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -89,10 +102,7 @@ class _CarteProduit extends StatelessWidget {
               const Text('Seuil bas', style: TextStyle(fontSize: 10, color: AppColors.danger)),
           ],
         ),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const StockSolideScreen()),
-        )
+        onTap: () => _ouvrirFormulaireMouvement(context),
       ),
     );
   }

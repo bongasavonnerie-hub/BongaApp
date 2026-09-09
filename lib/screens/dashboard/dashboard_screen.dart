@@ -60,7 +60,11 @@ class DashboardScreen extends StatelessWidget {
                 titre: 'Stock liquide',
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StockLiquideScreen())),
               ),
-              _RaccourciCard(icone: Icons.inventory_2_outlined, titre: 'Stock solide'),
+              _RaccourciCard(
+                icone: Icons.inventory_2_outlined,
+                titre: 'Stock solide',
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StockSolideScreen())),
+              ),
               _RaccourciCard(icone: Icons.people_outline, titre: 'Personnel'),
               _RaccourciCard(icone: Icons.history, titre: 'Mouvements'),
             ],

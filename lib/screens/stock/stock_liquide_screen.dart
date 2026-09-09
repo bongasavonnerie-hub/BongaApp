@@ -17,6 +17,19 @@ class StockLiquideScreen extends StatelessWidget {
       body: StreamBuilder<List<ProduitLiquideModel>>(
         stream: stockService.watchStockLiquide(),
         builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'Erreur de chargement : ${snapshot.error}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppColors.danger),
+                ),
+              ),
+            );
+          }
+
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
