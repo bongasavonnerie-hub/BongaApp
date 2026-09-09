@@ -4,6 +4,7 @@ import '../../models/produit_liquide_model.dart';
 import '../../models/produit_solide_model.dart';
 import '../../services/stock_service.dart';
 import '../../services/auth_service.dart';
+import '../stock/stock_liquide_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -52,8 +53,12 @@ class DashboardScreen extends StatelessWidget {
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
             childAspectRatio: 1.4,
-            children: const [
-              _RaccourciCard(icone: Icons.water_drop_outlined, titre: 'Stock liquide'),
+            children: [
+              _RaccourciCard(
+                icone: Icons.water_drop_outlined,
+                titre: 'Stock liquide',
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StockLiquideScreen())),
+              ),
               _RaccourciCard(icone: Icons.inventory_2_outlined, titre: 'Stock solide'),
               _RaccourciCard(icone: Icons.people_outline, titre: 'Personnel'),
               _RaccourciCard(icone: Icons.history, titre: 'Mouvements'),
@@ -158,18 +163,16 @@ class _CarteStockSolide extends StatelessWidget {
 class _RaccourciCard extends StatelessWidget {
   final IconData icone;
   final String titre;
+  final VoidCallback? onTap;
 
-  const _RaccourciCard({required this.icone, required this.titre});
+  const _RaccourciCard({required this.icone, required this.titre, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          // TODO: on branchera la navigation vers chaque écran
-          // dès qu'on les aura créés (stock, personnel, mouvements).
-        },
+        onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -184,4 +187,4 @@ class _RaccourciCard extends StatelessWidget {
       ),
     );
   }
-}
+} 
