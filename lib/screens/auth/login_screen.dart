@@ -17,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   final _authService = AuthService();
 
+  bool _obscureText = true; // true = mot de passe masqué par défaut
   bool _loading = false;
   String? _erreur;
 
@@ -70,12 +71,20 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   ClipOval(
-                    child: Image.asset(
+                    child: Transform.scale(
+                      // scale > 1 = on zoome sur l'image (elle déborde du cadre, mais
+                      // ClipOval découpe ce qui dépasse). On pousse ainsi la marge
+                      // crème du fichier original hors de la zone visible.
+                      // Ajuste cette valeur (1.15, 1.2, 1.25...) jusqu'à ce que
+                      // la bande blanche disparaisse complètement sur ton téléphone.
+                      scale: 1.2,
+                      child: Image.asset(
                       'assets/images/logo.jpeg',
                       width: 120,
                       height: 120,
                       fit: BoxFit.cover,
                     ),
+                    )
                   ),
                   const SizedBox(height: 32),
 
@@ -100,12 +109,25 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 14),
                   TextField(
                     controller: _passwordController,
-                    obscureText: true,
+                    obscureText: _obscureText, // lié à l'état, plus figé sur "true"
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
                       labelText: 'Mot de passe',
                       labelStyle: const TextStyle(color: Colors.white70),
                       prefixIcon: const Icon(Icons.lock_outline, color: Colors.white70),
+                      // suffixIcon : une icône à DROITE du champ (prefixIcon = à gauche)
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          // On change l'icône elle-même selon l'état actuel :
+                          // œil barré si le mdp est masqué, œil normal s'il est visible
+                          _obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          color: Colors.white70,
+                        ),
+                        onPressed: () {
+                          // setState() redessine l'écran avec la nouvelle valeur de _obscureText
+                          setState(() => _obscureText = !_obscureText);
+                        },
+                      ),
                       filled: true,
                       fillColor: Colors.white.withOpacity(0.1),
                       border: OutlineInputBorder(

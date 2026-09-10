@@ -6,6 +6,7 @@ import '../../services/stock_service.dart';
 import '../../services/auth_service.dart';
 import '../stock/stock_liquide_screen.dart';
 import '../stock/stock_solide_screen.dart';
+import '../personnel/personnel_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -65,7 +66,11 @@ class DashboardScreen extends StatelessWidget {
                 titre: 'Stock solide',
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StockSolideScreen())),
               ),
-              _RaccourciCard(icone: Icons.people_outline, titre: 'Personnel'),
+              _RaccourciCard(
+                icone: Icons.people_outline,
+                titre: 'Personnel',
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PersonnelScreen())),
+              ),
               _RaccourciCard(icone: Icons.history, titre: 'Mouvements'),
             ],
           ),
