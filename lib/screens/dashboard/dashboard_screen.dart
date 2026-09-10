@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
-import '../../models/produit_liquide_model.dart';
-import '../../models/produit_solide_model.dart';
 import '../../models/mouvement_model.dart';
 import '../../models/personnel_model.dart';
 import '../../services/stock_service.dart';
@@ -99,8 +97,7 @@ class DashboardScreen extends StatelessWidget {
                         couleurIcone: AppColors.bleuFleur,
                         label: 'Stock liquide',
                         streamTotal: stockService.watchStockLiquide(),
-                        extraireTotal: (produits) => (produits as List<ProduitLiquideModel>)
-                            .fold<double>(0, (s, p) => s + p.quantite),
+                        extraireTotal: (produits) => produits.fold<double>(0, (s, p) => s + p.quantite),
                         suffixe: 'unités',
                       ),
                     ),
@@ -111,8 +108,7 @@ class DashboardScreen extends StatelessWidget {
                         couleurIcone: AppColors.terracotta,
                         label: 'Stock solide',
                         streamTotal: stockService.watchStockSolide(),
-                        extraireTotal: (produits) => (produits as List<ProduitSolideModel>)
-                            .fold<double>(0, (s, p) => s + p.quantite),
+                        extraireTotal: (produits) => produits.fold<double>(0, (s, p) => s + p.quantite),
                         suffixe: 'unités',
                       ),
                     ),
