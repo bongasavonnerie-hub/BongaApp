@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import '../../services/auth_service.dart';
+import '../../widgets/bonga_background.dart';
+import '../../widgets/glass_card.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -55,71 +57,80 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Center(
-            child: SingleChildScrollView(
+      body: Stack(
+  children: [
+    const Positioned.fill(child: BongaBackground()),
+    SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Center(
+          child: SingleChildScrollView(
+            child: GlassCard(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Bloc visuel façon logo
                   ClipOval(
-  child: Image.asset(
-    'assets/images/logo.jpeg',
-    width: 160,
-    height: 160,
-    // BoxFit.cover : l'image remplit tout le cercle sans se déformer,
-    // quitte à rogner légèrement les bords si le ratio ne correspond
-    // pas exactement à un cercle parfait.
-    fit: BoxFit.cover,
-  ),
-),
-                  const SizedBox(height: 40),
+                    child: Image.asset(
+                      'assets/images/logo.jpeg',
+                      width: 120,
+                      height: 120,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
 
+                  // Sur fond translucide, on force le texte/icônes en blanc
+                  // pour rester lisible malgré le fond dégradé derrière.
                   TextField(
                     controller: _emailController,
+                    style: const TextStyle(color: Colors.white),
                     keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Email',
-                      prefixIcon: Icon(Icons.mail_outline),
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      prefixIcon: const Icon(Icons.mail_outline, color: Colors.white70),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.1),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 14),
-
                   TextField(
                     controller: _passwordController,
-                    obscureText: true, // masque le mot de passe à l'écran
-                    decoration: const InputDecoration(
+                    obscureText: true,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
                       labelText: 'Mot de passe',
-                      prefixIcon: Icon(Icons.lock_outline),
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      prefixIcon: const Icon(Icons.lock_outline, color: Colors.white70),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.1),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
-
                   if (_erreur != null) ...[
                     const SizedBox(height: 12),
-                    Text(
-                      _erreur!,
-                      style: const TextStyle(color: AppColors.danger, fontSize: 13),
-                    ),
+                    Text(_erreur!, style: const TextStyle(color: Colors.orangeAccent, fontSize: 13)),
                   ],
-
                   const SizedBox(height: 24),
-
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      // On désactive le bouton pendant le chargement
-                      // (onPressed: null = bouton grisé, non cliquable)
                       onPressed: _loading ? null : _seConnecter,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.vertSapin,
+                      ),
                       child: _loading
                           ? const SizedBox(
-                              height: 18,
-                              width: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
+                              height: 18, width: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.vertSapin),
                             )
                           : const Text('Se connecter'),
                     ),
@@ -130,6 +141,9 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
+    ),
+  ],
+),
     );
   }
 }
