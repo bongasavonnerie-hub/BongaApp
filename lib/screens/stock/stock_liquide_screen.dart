@@ -76,28 +76,61 @@ class _CarteProduit extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: ListTile(
-        title: Text(produit.nom, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text('${produit.contenance.toStringAsFixed(0)}${produit.uniteContenance} · ${produit.usage}'),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              '${produit.quantite.toStringAsFixed(0)}',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                // Rouge si en alerte, vert sinon — le calcul enAlerte
-                // vient directement du modèle, pas recalculé ici.
-                color: produit.enAlerte ? AppColors.danger : AppColors.succes,
-              ),
-            ),
-            if (produit.enAlerte)
-              const Text('Seuil bas', style: TextStyle(fontSize: 10, color: AppColors.danger)),
-          ],
-        ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
         onTap: () => _ouvrirFormulaireMouvement(context),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              // Icône dans un cercle bleu (couleur associée au liquide),
+              // même motif que sur le dashboard pour rester cohérent.
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.bleuFleur.withOpacity(0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.water_drop, color: AppColors.bleuFleur, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(produit.nom, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                    const SizedBox(height: 2),
+                    // Row avec des "pilules" (petits badges arrondis) pour
+                    // la contenance et l'usage, plus visuel qu'un simple texte.
+                    Row(
+                      children: [
+                        _Pilule(texte: '${produit.contenance.toStringAsFixed(0)}${produit.uniteContenance}'),
+                        const SizedBox(width: 6),
+                        _Pilule(texte: produit.usage),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    produit.quantite.toStringAsFixed(0),
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: produit.enAlerte ? AppColors.danger : AppColors.succes,
+                    ),
+                  ),
+                  if (produit.enAlerte)
+                    const Text('Seuil bas', style: TextStyle(fontSize: 10, color: AppColors.danger)),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -106,6 +139,26 @@ class _CarteProduit extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => _FormulaireMouvement(produit: produit, stockService: stockService),
+    );
+  }
+}
+
+/// Petit badge arrondi ("pilule") pour afficher une info courte de
+/// façon compacte et visuellement distincte du texte normal.
+class _Pilule extends StatelessWidget {
+  final String texte;
+
+  const _Pilule({required this.texte});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppColors.creme,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(texte, style: const TextStyle(fontSize: 10, color: AppColors.texteSecondaire)),
     );
   }
 }
