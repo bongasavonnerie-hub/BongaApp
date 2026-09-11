@@ -10,6 +10,7 @@ import '../../widgets/stat_flottante.dart';
 import '../stock/stock_liquide_screen.dart';
 import '../stock/stock_solide_screen.dart';
 import '../personnel/personnel_screen.dart';
+import '../mouvements/mouvements_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -167,11 +168,12 @@ class DashboardScreen extends StatelessWidget {
                       );
                     },
                   ),
-                  const _RaccourciCardRiche(
+                  _RaccourciCardRiche(
                     icone: Icons.history,
                     titre: 'Mouvements',
                     couleur: AppColors.taupe,
-                    // onTap absent pour l'instant : écran pas encore créé
+                    onTap: () => Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => const MouvementsScreen())),
                   ),
                 ],
               ),
