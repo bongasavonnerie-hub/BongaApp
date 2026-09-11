@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../theme/app_theme.dart';
 import '../../models/mouvement_model.dart';
 import '../../models/personnel_model.dart';
@@ -7,10 +8,15 @@ import '../../services/personnel_service.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/bonga_background.dart';
 import '../../widgets/stat_flottante.dart';
+import '../../widgets/badge_auteur.dart';
 import '../stock/stock_liquide_screen.dart';
 import '../stock/stock_solide_screen.dart';
 import '../personnel/personnel_screen.dart';
 import '../mouvements/mouvements_screen.dart';
+import '../../models/user_model.dart';
+import '../../widgets/notification_bell.dart';
+import '../../widgets/user_avatar.dart';
+import '../profil/profil_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -42,10 +48,7 @@ class DashboardScreen extends StatelessWidget {
               child: Stack(
                 children: [
                   // Notre widget de fond dégradé + bulles, réutilisé tel quel
-                  const SizedBox(
-                    height: 240,
-                    child: BongaBackground(),
-                  ),
+                  const SizedBox(height: 240, child: BongaBackground()),
                   // Contenu par-dessus le dégradé : titre + bouton déconnexion
                   Positioned(
                     top: 50,
@@ -68,13 +71,45 @@ class DashboardScreen extends StatelessWidget {
                             SizedBox(height: 4),
                             Text(
                               'Vue d\'ensemble du stock',
-                              style: TextStyle(color: Colors.white70, fontSize: 13),
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                              ),
                             ),
                           ],
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.logout, color: Colors.white),
-                          onPressed: () => AuthService().signOut(),
+                        // Le bouton déconnexion isolé disparaît d'ici : il vit désormais
+                        // dans l'écran Profil (accessible via l'avatar), un seul endroit
+                        // logique pour cette action plutôt que dispersée.
+                        Row(
+                          children: [
+                            const NotificationBell(),
+                            const SizedBox(width: 12),
+                            // GestureDetector : rend l'avatar cliquable sans les effets
+                            // visuels d'un bouton classique (juste une zone tactile).
+                            GestureDetector(
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const ProfilScreen(),
+                                ),
+                              ),
+                              // StreamBuilder ici : l'avatar doit refléter le VRAI profil
+                              // connecté (nom, initiales) dès qu'il est chargé, pas
+                              // rester figé sur le placeholder générique.
+                              child: StreamBuilder<UserModel?>(
+                                stream: AuthService().watchUserProfile(
+                                  AuthService().currentUser?.uid ?? '',
+                                ),
+                                builder: (context, snapshot) {
+                                  return UserAvatar(
+                                    user: snapshot.data,
+                                    taille: 36,
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -99,7 +134,8 @@ class DashboardScreen extends StatelessWidget {
                         couleurIcone: AppColors.bleuFleur,
                         label: 'Stock liquide',
                         streamTotal: stockService.watchStockLiquide(),
-                        extraireTotal: (produits) => produits.fold<double>(0, (s, p) => s + p.quantite),
+                        extraireTotal: (produits) =>
+                            produits.fold<double>(0, (s, p) => s + p.quantite),
                         suffixe: 'unités',
                       ),
                     ),
@@ -110,7 +146,8 @@ class DashboardScreen extends StatelessWidget {
                         couleurIcone: AppColors.terracotta,
                         label: 'Stock solide',
                         streamTotal: stockService.watchStockSolide(),
-                        extraireTotal: (produits) => produits.fold<double>(0, (s, p) => s + p.quantite),
+                        extraireTotal: (produits) =>
+                            produits.fold<double>(0, (s, p) => s + p.quantite),
                         suffixe: 'unités',
                       ),
                     ),
@@ -124,7 +161,8 @@ class DashboardScreen extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
               child: Text(
                 'Accès rapide',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 17),
+                style: Theme.of(context).textTheme.headlineMedium
+                    ?.copyWith(fontSize: 17),
               ),
             ),
             Padding(
@@ -141,15 +179,23 @@ class DashboardScreen extends StatelessWidget {
                     icone: Icons.water_drop_outlined,
                     titre: 'Stock liquide',
                     couleur: AppColors.bleuFleur,
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const StockLiquideScreen())),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const StockLiquideScreen(),
+                      ),
+                    ),
                   ),
                   _RaccourciCardRiche(
                     icone: Icons.inventory_2_outlined,
                     titre: 'Stock solide',
                     couleur: AppColors.terracotta,
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const StockSolideScreen())),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const StockSolideScreen(),
+                      ),
+                    ),
                   ),
                   // StreamBuilder ici aussi, pour afficher le NOMBRE de
                   // membres du personnel directement sur la carte, comme
@@ -163,8 +209,12 @@ class DashboardScreen extends StatelessWidget {
                         titre: 'Personnel',
                         sousTitre: '$nb membre${nb > 1 ? 's' : ''}',
                         couleur: AppColors.vertSapin,
-                        onTap: () => Navigator.push(context,
-                            MaterialPageRoute(builder: (_) => const PersonnelScreen())),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const PersonnelScreen(),
+                          ),
+                        ),
                       );
                     },
                   ),
@@ -172,8 +222,12 @@ class DashboardScreen extends StatelessWidget {
                     icone: Icons.history,
                     titre: 'Mouvements',
                     couleur: AppColors.taupe,
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const MouvementsScreen())),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const MouvementsScreen(),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -186,7 +240,8 @@ class DashboardScreen extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
               child: Text(
                 'Derniers mouvements',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 17),
+                style: Theme.of(context).textTheme.headlineMedium
+                    ?.copyWith(fontSize: 17),
               ),
             ),
             StreamBuilder<List<MouvementModel>>(
@@ -199,15 +254,19 @@ class DashboardScreen extends StatelessWidget {
                 if (mouvements.isEmpty) {
                   return const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 20),
-                    child: Text('Aucun mouvement enregistré.',
-                        style: TextStyle(color: AppColors.texteSecondaire)),
+                    child: Text(
+                      'Aucun mouvement enregistré.',
+                      style: TextStyle(color: AppColors.texteSecondaire),
+                    ),
                   );
                 }
 
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
-                    children: mouvements.map((m) => _LigneMouvement(mouvement: m)).toList(),
+                    children: mouvements
+                        .map((m) => _LigneMouvement(mouvement: m))
+                        .toList(),
                   ),
                 );
               },
@@ -258,11 +317,22 @@ class _RaccourciCardRiche extends StatelessWidget {
                 child: Icon(icone, color: couleur, size: 20),
               ),
               const Spacer(),
-              Text(titre, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              Text(
+                titre,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               if (sousTitre != null) ...[
                 const SizedBox(height: 2),
-                Text(sousTitre!,
-                    style: const TextStyle(fontSize: 11, color: AppColors.texteSecondaire)),
+                Text(
+                  sousTitre!,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.texteSecondaire,
+                  ),
+                ),
               ],
             ],
           ),
@@ -293,20 +363,43 @@ class _LigneMouvement extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            estEntree ? Icons.arrow_downward : Icons.arrow_upward,
-            size: 16,
-            color: estEntree ? AppColors.succes : AppColors.danger,
+          Container(
+            padding: const EdgeInsets.all(9),
+            decoration: BoxDecoration(
+              color: (estEntree ? AppColors.succes : AppColors.terracotta)
+                  .withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              estEntree ? Icons.login : Icons.logout,
+              size: 16,
+              color: estEntree ? AppColors.succes : AppColors.terracotta,
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(mouvement.produitNom,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-                Text(mouvement.motif,
-                    style: const TextStyle(fontSize: 11, color: AppColors.texteSecondaire)),
+                Text(
+                  mouvement.produitNom,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  mouvement.motif,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.texteSecondaire,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                BadgeAuteur(
+                  nom: mouvement.effectuePar,
+                  estEntree: estEntree,
+                ),
               ],
             ),
           ),
@@ -314,7 +407,7 @@ class _LigneMouvement extends StatelessWidget {
             '${estEntree ? '+' : '-'}${mouvement.quantite.toStringAsFixed(0)}',
             style: TextStyle(
               fontWeight: FontWeight.w600,
-              color: estEntree ? AppColors.succes : AppColors.danger,
+              color: estEntree ? AppColors.succes : AppColors.terracotta,
             ),
           ),
         ],

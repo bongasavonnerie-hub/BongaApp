@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';  //
+import 'package:cloud_firestore/cloud_firestore.dart'; //
+
 import '../constants/firestore_paths.dart';
 import '../models/user_model.dart';
 
@@ -36,7 +37,10 @@ class AuthService {
   /// Va chercher le document users/{uid} correspondant et le transforme
   /// en UserModel grâce à la méthode fromFirestore qu'on a écrite avant.
   Future<UserModel?> getUserProfile(String uid) async {
-    final doc = await _firestore.collection(FirestorePaths.users).doc(uid).get();
+    final doc = await _firestore
+        .collection(FirestorePaths.users)
+        .doc(uid)
+        .get();
 
     if (!doc.exists) return null;
 
@@ -54,5 +58,96 @@ class AuthService {
 
     final idTokenResult = await user.getIdTokenResult(true);
     return idTokenResult.claims?['role'] == 'admin';
+  }
+
+  /// Version "stream" de getUserProfile : au lieu de lire une fois,
+  /// écoute EN CONTINU le document users/{uid}. Utile pour l'en-tête
+  /// du dashboard, qui doit refléter en temps réel un changement de
+  /// rôle (ex: si un autre admin te promeut pendant que l'app est ouverte).
+  Stream<UserModel?> watchUserProfile(String uid) {
+    return _firestore
+        .collection(FirestorePaths.users)
+        .doc(uid)
+        .snapshots()
+        .map((doc) => doc.exists ? UserModel.fromFirestore(doc) : null);
+  }
+
+  /// Modifie le nom/prénom stocké dans Firestore. Ne touche PAS à
+  /// Firebase Auth (qui ne connaît que l'email/mot de passe, pas le nom).
+  Future<void> updateNomPrenom({
+    required String nom,
+    required String prenom,
+  }) async {
+    final uid = currentUser?.uid;
+    if (uid == null) throw Exception('Aucun utilisateur connecté.');
+
+    await _firestore.collection(FirestorePaths.users).doc(uid).update({
+      'nom': nom,
+      'prenom': prenom,
+    });
+  }
+
+  /// Change le mot de passe, après ré-authentification obligatoire.
+  Future<void> changerMotDePasse({
+    required String motDePasseActuel,
+    required String nouveauMotDePasse,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null || user.email == null) {
+      throw Exception('Aucun utilisateur connecté.');
+    }
+
+    // EmailAuthProvider.credential recrée une "preuve d'identité" à
+    // partir de l'email + mot de passe ACTUEL (celui que l'utilisateur
+    // vient de retaper), qu'on soumet pour prouver que c'est bien lui.
+    final credential = EmailAuthProvider.credential(
+      email: user.email!,
+      password: motDePasseActuel,
+    );
+
+    // reauthenticateWithCredential vérifie ce mot de passe actuel
+    // auprès de Firebase. Si le mot de passe est faux, ça lève une
+    // exception ici, AVANT même de tenter le changement.
+    await user.reauthenticateWithCredential(credential);
+
+    await user.updatePassword(nouveauMotDePasse);
+  }
+
+  /// Si le document users/{uid} n'existe pas encore pour ce compte
+  /// (typiquement un compte créé dans Firebase Auth sans profil
+  /// Firestore associé), on en crée un minimal automatiquement, en
+  /// rôle "standard" par défaut — JAMAIS "admin" automatiquement,
+  /// ce serait une faille de sécurité (n'importe qui pourrait se
+  /// connecter et se retrouver admin).
+  Future<void> ensureUserProfileExists() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    final docRef = _firestore.collection(FirestorePaths.users).doc(user.uid);
+    final doc = await docRef.get();
+
+    if (!doc.exists) {
+      await docRef.set({
+        'nom': '',
+        'prenom': '',
+        'email': user.email ?? '',
+        'role': 'standard',
+        'actif': true,
+        'dateCreation': Timestamp.now(),
+      });
+    }
+  }
+
+  /// Renvoie "Prénom Nom" de l'utilisateur connecté, ou son email en
+  /// secours si le profil Firestore n'a pas encore de nom renseigné.
+  Future<String> getNomAffichage() async {
+    final uid = currentUser?.uid;
+    if (uid == null) return 'Utilisateur inconnu';
+
+    final profil = await getUserProfile(uid);
+    if (profil == null || (profil.nom.isEmpty && profil.prenom.isEmpty)) {
+      return currentUser?.email ?? 'Utilisateur inconnu';
+    }
+    return '${profil.prenom} ${profil.nom}'.trim();
   }
 }

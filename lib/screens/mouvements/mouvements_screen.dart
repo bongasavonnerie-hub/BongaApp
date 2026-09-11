@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../services/auth_service.dart';
 import '../../theme/app_theme.dart';
 import '../../models/mouvement_model.dart';
 import '../../services/stock_service.dart';
+import '../../widgets/badge_auteur.dart';
 
 // Enum utilisé UNIQUEMENT pour piloter l'affichage du filtre dans cet
 // écran — à ne pas confondre avec TypeMouvement (qui vient du modèle
@@ -163,13 +165,13 @@ class _CarteMouvement extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: (estEntree ? AppColors.succes : AppColors.danger)
+              color: (estEntree ? AppColors.succes : AppColors.terracotta)
                   .withOpacity(0.12),
               shape: BoxShape.circle,
             ),
             child: Icon(
-              estEntree ? Icons.arrow_downward : Icons.arrow_upward,
-              color: estEntree ? AppColors.succes : AppColors.danger,
+              estEntree ? Icons.login : Icons.logout,
+              color: estEntree ? AppColors.succes : AppColors.terracotta,
               size: 18,
             ),
           ),
@@ -220,21 +222,202 @@ class _CarteMouvement extends StatelessWidget {
                     color: AppColors.texteSecondaire,
                   ),
                 ),
+                const SizedBox(height: 3),
+                BadgeAuteur(
+                  nom: mouvement.effectuePar,
+                  estEntree: estEntree,
+                ),
               ],
             ),
           ),
 
           const SizedBox(width: 8),
-          Text(
-            '${estEntree ? '+' : '-'}${mouvement.quantite.toStringAsFixed(0)}',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: estEntree ? AppColors.succes : AppColors.danger,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${estEntree ? '+' : '-'}${mouvement.quantite.toStringAsFixed(0)}',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: estEntree ? AppColors.succes : AppColors.terracotta,
+                ),
+              ),
+              // Bouton compact ouvrant le formulaire de correction. IconButton
+              // seul suffirait, mais un TextButton avec icône+texte est plus
+              // explicite pour une action pas encore familière à l'utilisateur.
+              TextButton.icon(
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (_) =>
+                      _FormulaireCorrection(mouvementOriginal: mouvement),
+                ),
+                icon: const Icon(Icons.undo, size: 14),
+                label: const Text('Corriger', style: TextStyle(fontSize: 11)),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(0, 24),
+                  foregroundColor: AppColors.texteSecondaire,
+                ),
+              ),
+            ],
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Formulaire de correction : pré-rempli avec la quantité du mouvement
+/// d'origine (l'utilisateur peut l'ajuster), et enregistre un mouvement
+/// du type INVERSE via StockService.corrigerMouvement.
+class _FormulaireCorrection extends StatefulWidget {
+  final MouvementModel mouvementOriginal;
+
+  const _FormulaireCorrection({required this.mouvementOriginal});
+
+  @override
+  State<_FormulaireCorrection> createState() => _FormulaireCorrectionState();
+}
+
+class _FormulaireCorrectionState extends State<_FormulaireCorrection> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _quantiteController;
+  final _motifController = TextEditingController(
+    text: 'Correction erreur de saisie',
+  );
+  TypeMouvement _type = TypeMouvement.sortie;
+  bool _envoi = false;
+  String? _erreur;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pré-remplit avec la MÊME quantité que l'original : dans le cas
+    // le plus courant (annulation complète d'une erreur), l'utilisateur
+    // n'a rien à changer, juste à valider.
+    _quantiteController = TextEditingController(
+      text: widget.mouvementOriginal.quantite.toStringAsFixed(0),
+    );
+    // Pré-sélectionne le type INVERSE de l'original : c'est le cas le
+    // plus fréquent (annuler un mouvement erroné). L'utilisateur peut
+    // le changer s'il s'est trompé sur le type aussi.
+    _type = widget.mouvementOriginal.type == TypeMouvement.entree
+        ? TypeMouvement.sortie
+        : TypeMouvement.entree;
+  }
+
+  Future<void> _enregistrer() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _envoi = true;
+      _erreur = null;
+    });
+
+    try {
+      final nomAffichage = await AuthService().getNomAffichage();
+
+      await StockService().corrigerMouvement(
+        mouvementOriginal: widget.mouvementOriginal,
+        type: _type,
+        quantite: double.parse(_quantiteController.text),
+        motif: _motifController.text.trim(),
+        effectuePar: nomAffichage,
+      );
+      if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      setState(() => _erreur = e.toString().replaceAll('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _envoi = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final original = widget.mouvementOriginal;
+    final estEntreeOriginale = original.type == TypeMouvement.entree;
+
+    return AlertDialog(
+      title: const Text('Corriger ce mouvement'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Mouvement d\'origine : ${estEntreeOriginale ? 'Entrée' : 'Sortie'} de '
+              '${original.quantite.toStringAsFixed(0)} (${original.produitNom})',
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.texteSecondaire,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Choisis le type de mouvement correcteur :',
+              style: TextStyle(fontSize: 12),
+            ),
+            const SizedBox(height: 8),
+            SegmentedButton<TypeMouvement>(
+              segments: const [
+                ButtonSegment(
+                  value: TypeMouvement.entree,
+                  label: Text('Entrée'),
+                ),
+                ButtonSegment(
+                  value: TypeMouvement.sortie,
+                  label: Text('Sortie'),
+                ),
+              ],
+              selected: {_type},
+              onSelectionChanged: (nouveauSet) =>
+                  setState(() => _type = nouveauSet.first),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _quantiteController,
+              decoration: const InputDecoration(
+                labelText: 'Quantité à corriger',
+              ),
+              keyboardType: TextInputType.number,
+              validator: (v) => (v == null || double.tryParse(v) == null)
+                  ? 'Nombre invalide'
+                  : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _motifController,
+              decoration: const InputDecoration(labelText: 'Motif'),
+              validator: (v) =>
+                  (v == null || v.isEmpty) ? 'Champ requis' : null,
+            ),
+            if (_erreur != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _erreur!,
+                style: const TextStyle(color: AppColors.danger, fontSize: 12),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Annuler'),
+        ),
+        ElevatedButton(
+          onPressed: _envoi ? null : _enregistrer,
+          child: _envoi
+              ? const SizedBox(
+                  height: 16,
+                  width: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Valider la correction'),
+        ),
+      ],
     );
   }
 }

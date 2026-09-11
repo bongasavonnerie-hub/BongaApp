@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../theme/app_theme.dart';
 
 /// Fond dégradé avec éléments décoratifs flottants (bulles, goutte, feuille).
@@ -66,7 +67,7 @@ class _Bulle extends StatelessWidget {
       height: diametre,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white.withOpacity(opacite),
+        color: Colors.white.withValues(alpha: opacite),
       ),
     );
   }
@@ -81,21 +82,20 @@ class _GouttePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white.withOpacity(opacite);
+    final paint = Paint()..color = Colors.white.withValues(alpha: opacite);
     final path = Path();
 
     // Point de départ : la pointe de la goutte, en haut
     path.moveTo(size.width / 2, 0);
     // Courbe vers le côté droit, s'élargissant vers le bas
     path.quadraticBezierTo(
-      size.width, size.height * 0.6,
-      size.width / 2, size.height,
+      size.width,
+      size.height * 0.6,
+      size.width / 2,
+      size.height,
     );
     // Courbe symétrique vers le côté gauche, remontant vers la pointe
-    path.quadraticBezierTo(
-      0, size.height * 0.6,
-      size.width / 2, 0,
-    );
+    path.quadraticBezierTo(0, size.height * 0.6, size.width / 2, 0);
     path.close();
 
     canvas.drawPath(path, paint);

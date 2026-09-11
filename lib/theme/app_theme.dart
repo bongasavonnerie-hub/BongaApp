@@ -8,17 +8,21 @@ class AppColors {
   AppColors._(); // empêche d'instancier cette classe par erreur
 
   // Verts (identité principale du logo)
-  static const Color vertSapin = Color(0xFF1E4632);   // contours, boutons
-  static const Color vertSauge = Color(0xFFB7D3A3);   // fond du logo, accents doux
-  static const Color vertClairBg = Color(0xFFEAF3DE); // fond de cartes "stock liquide"
+  static const Color vertSapin = Color(0xFF1E4632); // contours, boutons
+  static const Color vertSauge = Color(
+    0xFFB7D3A3,
+  ); // fond du logo, accents doux
+  static const Color vertClairBg = Color(
+    0xFFEAF3DE,
+  ); // fond de cartes "stock liquide"
 
   // Fond général de l'app
   static const Color creme = Color(0xFFF4F1E4);
   static const Color blanc = Color(0xFFFFFFFF);
 
   // Texte
-  static const Color navy = Color(0xFF1C3A5A);       // titres, "BONGA"
-  static const Color taupe = Color(0xFF7A6248);       // sous-titres, "savonnerie"
+  static const Color navy = Color(0xFF1C3A5A); // titres, "BONGA"
+  static const Color taupe = Color(0xFF7A6248); // sous-titres, "savonnerie"
   static const Color texteSecondaire = Color(0xFF5F5E5A);
 
   // Accents ponctuels (issus des fleurs du logo)
@@ -64,7 +68,10 @@ class AppTheme {
         ),
         // Corps de texte courant, partout ailleurs dans l'app
         bodyLarge: GoogleFonts.inter(color: AppColors.navy, fontSize: 15),
-        bodyMedium: GoogleFonts.inter(color: AppColors.texteSecondaire, fontSize: 13),
+        bodyMedium: GoogleFonts.inter(
+          color: AppColors.texteSecondaire,
+          fontSize: 13,
+        ),
       ),
 
       appBarTheme: AppBarTheme(
@@ -85,7 +92,7 @@ class AppTheme {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: AppColors.vertSapin.withOpacity(0.08)),
+          side: BorderSide(color: AppColors.vertSapin.withValues(alpha: 0.08)),
         ),
         margin: const EdgeInsets.symmetric(vertical: 6),
       ),
@@ -95,7 +102,9 @@ class AppTheme {
           backgroundColor: AppColors.vertSapin,
           foregroundColor: AppColors.blanc,
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
         ),
       ),
@@ -105,11 +114,15 @@ class AppTheme {
         fillColor: AppColors.blanc,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.vertSapin.withOpacity(0.15)),
+          borderSide: BorderSide(
+            color: AppColors.vertSapin.withValues(alpha: 0.15),
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.vertSapin.withOpacity(0.15)),
+          borderSide: BorderSide(
+            color: AppColors.vertSapin.withValues(alpha: 0.15),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

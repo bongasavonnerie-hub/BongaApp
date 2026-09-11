@@ -345,6 +345,7 @@ class _FormulaireProduitSolideState extends State<_FormulaireProduitSolide> {
                 validator: (v) =>
                     (v == null || v.isEmpty) ? 'Champ requis' : null,
               ),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _grammageController,
                 decoration: const InputDecoration(labelText: 'Grammage (g)'),
@@ -353,6 +354,7 @@ class _FormulaireProduitSolideState extends State<_FormulaireProduitSolide> {
                     ? 'Nombre invalide'
                     : null,
               ),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _quantiteController,
                 decoration: const InputDecoration(
@@ -363,6 +365,7 @@ class _FormulaireProduitSolideState extends State<_FormulaireProduitSolide> {
                     ? 'Nombre invalide'
                     : null,
               ),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _seuilController,
                 decoration: const InputDecoration(labelText: 'Seuil d\'alerte'),
@@ -371,6 +374,7 @@ class _FormulaireProduitSolideState extends State<_FormulaireProduitSolide> {
                     ? 'Nombre invalide'
                     : null,
               ),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _usageController,
                 decoration: const InputDecoration(
@@ -443,7 +447,7 @@ class _FormulaireMouvementState extends State<_FormulaireMouvement> {
       _erreur = null;
     });
 
-    final uid = AuthService().currentUser?.uid ?? '';
+    final nomAffichage = await AuthService().getNomAffichage();
 
     try {
       await widget.stockService.enregistrerMouvementSolide(
@@ -451,7 +455,7 @@ class _FormulaireMouvementState extends State<_FormulaireMouvement> {
         type: _type,
         quantite: double.parse(_quantiteController.text),
         motif: _motifController.text.trim(),
-        effectuePar: uid,
+        effectuePar: nomAffichage,
       );
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
@@ -498,6 +502,7 @@ class _FormulaireMouvementState extends State<_FormulaireMouvement> {
                   ? 'Nombre invalide'
                   : null,
             ),
+            const SizedBox(height: 12),
             TextFormField(
               controller: _motifController,
               decoration: const InputDecoration(labelText: 'Motif'),

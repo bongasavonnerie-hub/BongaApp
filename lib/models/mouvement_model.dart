@@ -15,7 +15,7 @@ class MouvementModel {
   final DateTime date;
   final String effectuePar;
 
-  MouvementModel ({
+  MouvementModel({
     required this.id,
     required this.produitId,
     required this.produitNom,
@@ -30,17 +30,19 @@ class MouvementModel {
   factory MouvementModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return MouvementModel(
-      id: doc.id, 
-      produitId: data['produitId'] ?? '', 
-      produitNom: data['produitNom'], 
+      id: doc.id,
+      produitId: data['produitId'] ?? '',
+      produitNom: data['produitNom'],
       produitType: (data['produitType'] == 'liquide')
-      ? TypeProduitMouvement.liquide
-      : TypeProduitMouvement.solide, 
-      type: (data['type'] == 'entre') ? TypeMouvement.entree :TypeMouvement.sortie,
-      quantite: (data['quantite'] ?? 0).toDouble(), 
-      motif: data['motif'] ?? '', 
+          ? TypeProduitMouvement.liquide
+          : TypeProduitMouvement.solide,
+      type: (data['type'] == 'entre')
+          ? TypeMouvement.entree
+          : TypeMouvement.sortie,
+      quantite: (data['quantite'] ?? 0).toDouble(),
+      motif: data['motif'] ?? '',
       date: (data['date'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      effectuePar: data['effectuePar'] ?? '',
+      effectuePar: data['effectuePar'] ?? 'Utilisateur inconnu',
     );
   }
 }

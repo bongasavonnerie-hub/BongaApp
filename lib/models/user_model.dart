@@ -10,6 +10,10 @@ class UserModel {
   final UserRole role;
   final bool actif;
   final DateTime dateCreation;
+  // null = l'utilisateur n'a jamais consulté ses notifications.
+  // Chaque utilisateur a SON propre curseur (contrairement à avant où
+  // c'était celui de l'appareil) : voir NotificationService.
+  final DateTime? derniereLectureNotifications;
 
   UserModel ({
     required this.uid,
@@ -19,6 +23,7 @@ class UserModel {
     required this.role,
     this.actif = true,
     required this.dateCreation,
+    this.derniereLectureNotifications,
   });
 
    // Raccourci pratique : partout où on aura besoin de vérifier
@@ -36,6 +41,8 @@ class UserModel {
       // Par sécurité vaux mieux sous-estimer les droits que de les sur-estimer
       role: (data['role'] == 'admin') ? UserRole.admin : UserRole.standard, 
       dateCreation: (data['dateCreation'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      derniereLectureNotifications:
+          (data['derniereLectureNotifications'] as Timestamp?)?.toDate(),
     );
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../theme/app_theme.dart';
 import '../../models/personnel_model.dart';
 import '../../services/personnel_service.dart';
@@ -108,7 +109,10 @@ class _CartePersonnel extends StatelessWidget {
           backgroundColor: couleur,
           child: Text(
             initiales,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
         title: Text(
@@ -124,7 +128,9 @@ class _CartePersonnel extends StatelessWidget {
             color: personne.statut == StatutPersonnel.actif
                 ? AppColors.succesBg
                 : AppColors.dangerBg,
-            borderRadius: BorderRadius.circular(20), // très arrondi = forme de "pilule"
+            borderRadius: BorderRadius.circular(
+              20,
+            ), // très arrondi = forme de "pilule"
           ),
           child: Text(
             personne.statut == StatutPersonnel.actif ? 'Actif' : 'Inactif',
@@ -141,7 +147,10 @@ class _CartePersonnel extends StatelessWidget {
           context: context,
           // On repasse "personne" existante : le formulaire saura donc
           // qu'il s'agit d'une MODIFICATION, pas d'un ajout (voir plus bas).
-          builder: (_) => _FormulairePersonnel(service: service, personneExistante: personne),
+          builder: (_) => _FormulairePersonnel(
+            service: service,
+            personneExistante: personne,
+          ),
         ),
       ),
     );
@@ -239,17 +248,20 @@ class _FormulairePersonnelState extends State<_FormulairePersonnel> {
               TextFormField(
                 controller: _nomController,
                 decoration: const InputDecoration(labelText: 'Nom'),
-                validator: (v) => (v == null || v.isEmpty) ? 'Champ requis' : null,
+                validator: (v) =>
+                    (v == null || v.isEmpty) ? 'Champ requis' : null,
               ),
               TextFormField(
                 controller: _prenomController,
                 decoration: const InputDecoration(labelText: 'Prénom'),
-                validator: (v) => (v == null || v.isEmpty) ? 'Champ requis' : null,
+                validator: (v) =>
+                    (v == null || v.isEmpty) ? 'Champ requis' : null,
               ),
               TextFormField(
                 controller: _posteController,
                 decoration: const InputDecoration(labelText: 'Poste'),
-                validator: (v) => (v == null || v.isEmpty) ? 'Champ requis' : null,
+                validator: (v) =>
+                    (v == null || v.isEmpty) ? 'Champ requis' : null,
               ),
               TextFormField(
                 controller: _contratController,
@@ -263,7 +275,7 @@ class _FormulairePersonnelState extends State<_FormulairePersonnel> {
               SwitchListTile(
                 title: const Text('Actif'),
                 value: _actif,
-                activeColor: AppColors.vertSapin,
+                activeThumbColor: AppColors.vertSapin,
                 contentPadding: EdgeInsets.zero,
                 onChanged: (valeur) => setState(() => _actif = valeur),
               ),
@@ -281,12 +293,16 @@ class _FormulairePersonnelState extends State<_FormulairePersonnel> {
             style: TextButton.styleFrom(foregroundColor: AppColors.danger),
             child: const Text('Supprimer'),
           ),
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Annuler')),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Annuler'),
+        ),
         ElevatedButton(
           onPressed: _envoi ? null : _enregistrer,
           child: _envoi
               ? const SizedBox(
-                  height: 16, width: 16,
+                  height: 16,
+                  width: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : Text(_modeModification ? 'Enregistrer' : 'Ajouter'),
