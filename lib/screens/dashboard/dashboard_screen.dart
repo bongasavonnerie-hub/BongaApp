@@ -6,6 +6,7 @@ import '../../services/stock_service.dart';
 import '../../services/personnel_service.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/bonga_background.dart';
+import '../../widgets/stat_flottante.dart';
 import '../stock/stock_liquide_screen.dart';
 import '../stock/stock_solide_screen.dart';
 import '../personnel/personnel_screen.dart';
@@ -92,7 +93,7 @@ class DashboardScreen extends StatelessWidget {
                 child: Row(
                   children: [
                     Expanded(
-                      child: _StatFlottante(
+                      child: StatFlottante(
                         icone: Icons.water_drop,
                         couleurIcone: AppColors.bleuFleur,
                         label: 'Stock liquide',
@@ -103,7 +104,7 @@ class DashboardScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: _StatFlottante(
+                      child: StatFlottante(
                         icone: Icons.inventory_2,
                         couleurIcone: AppColors.terracotta,
                         label: 'Stock solide',
@@ -214,85 +215,6 @@ class DashboardScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-/// Carte translucide affichant un total en temps réel, conçue pour être
-/// posée par-dessus le dégradé (fond blanc semi-transparent).
-/// Générique : on lui passe le stream et une fonction qui sait calculer
-/// le total à partir de N'IMPORTE QUELLE liste (liquide OU solide),
-/// ce qui évite d'écrire deux fois presque le même widget.
-class _StatFlottante<T> extends StatelessWidget {
-  final IconData icone;
-  final Color couleurIcone;
-  final String label;
-  final Stream<List<T>> streamTotal;
-  final double Function(List<T>) extraireTotal;
-  final String suffixe;
-
-  const _StatFlottante({
-    required this.icone,
-    required this.couleurIcone,
-    required this.label,
-    required this.streamTotal,
-    required this.extraireTotal,
-    required this.suffixe,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<List<T>>(
-      stream: streamTotal,
-      builder: (context, snapshot) {
-        final total = snapshot.hasData ? extraireTotal(snapshot.data!) : 0.0;
-
-        return Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            // Une ombre légère (pas dans notre charte habituelle, mais
-            // nécessaire ici pour que la carte blanche se détache
-            // clairement du fond crème juste en dessous).
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              // Icône dans un cercle de couleur : motif qu'on va
-              // réutiliser partout pour un rendu plus riche.
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: couleurIcone.withOpacity(0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icone, color: couleurIcone, size: 18),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(label,
-                        style: const TextStyle(fontSize: 11, color: AppColors.texteSecondaire)),
-                    Text(
-                      total.toStringAsFixed(0),
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

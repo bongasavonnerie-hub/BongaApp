@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+
 import '../../theme/app_theme.dart';
 import '../../models/produit_liquide_model.dart';
 import '../../services/stock_service.dart';
 import '../../services/auth_service.dart';
 import '../../models/mouvement_model.dart';
+import '../../widgets/bonga_background.dart';
+import '../../widgets/stat_flottante.dart';
 
 class StockLiquideScreen extends StatelessWidget {
   const StockLiquideScreen({super.key});
@@ -13,42 +16,136 @@ class StockLiquideScreen extends StatelessWidget {
     final stockService = StockService();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Stock liquide')),
-      body: StreamBuilder<List<ProduitLiquideModel>>(
-        stream: stockService.watchStockLiquide(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(
+      backgroundColor: AppColors.creme,
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ---------- EN-TÊTE DÉGRADÉ ----------
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(32),
+                bottomRight: Radius.circular(32),
+              ),
+              child: Stack(
+                children: [
+                  const SizedBox(
+                    height: 200,
+                    child: BongaBackground(),
+                  ),
+                  Positioned(
+                    top: 50,
+                    left: 4,
+                    right: 20,
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                        const SizedBox(width: 4),
+                        const Text(
+                          'Stock liquide',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // ---------- CARTES STATS FLOTTANTES ----------
+            Transform.translate(
+              offset: const Offset(0, -40),
               child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  'Erreur de chargement : ${snapshot.error}',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: AppColors.danger),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: StatFlottante(
+                        icone: Icons.water_drop,
+                        couleurIcone: AppColors.bleuFleur,
+                        label: 'Total en stock',
+                        streamTotal: stockService.watchStockLiquide(),
+                        extraireTotal: (produits) =>
+                            produits.fold<double>(0, (s, p) => s + p.quantite),
+                        suffixe: 'pcs',
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: StatFlottante(
+                        icone: Icons.warning_amber_rounded,
+                        couleurIcone: AppColors.danger,
+                        label: 'En alerte',
+                        streamTotal: stockService.watchStockLiquide(),
+                        extraireTotal: (produits) => produits
+                            .where((p) => p.enAlerte)
+                            .length
+                            .toDouble(),
+                        suffixe: '',
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            );
-          }
+            ),
 
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
+            const SizedBox(height: 8),
 
-          final produits = snapshot.data!;
+            // ---------- LISTE DES PRODUITS ----------
+            StreamBuilder<List<ProduitLiquideModel>>(
+              stream: stockService.watchStockLiquide(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        'Erreur de chargement : ${snapshot.error}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: AppColors.danger),
+                      ),
+                    ),
+                  );
+                }
 
-          if (produits.isEmpty) {
-            return const Center(child: Text('Aucun produit pour le moment.'));
-          }
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: produits.length,
-            itemBuilder: (context, index) {
-              final produit = produits[index];
-              return _CarteProduit(produit: produit, stockService: stockService);
-            },
-          );
-        },
+                final produits = snapshot.data!;
+
+                if (produits.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Center(child: Text('Aucun produit pour le moment.')),
+                  );
+                }
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: [
+                      for (final produit in produits)
+                        _CarteProduit(
+                          produit: produit,
+                          stockService: stockService,
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.vertSapin,
@@ -88,23 +185,36 @@ class _CarteProduit extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.bleuFleur.withOpacity(0.12),
+                  color: AppColors.bleuFleur.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.water_drop, color: AppColors.bleuFleur, size: 20),
+                child: const Icon(
+                  Icons.water_drop,
+                  color: AppColors.bleuFleur,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(produit.nom, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                    Text(
+                      produit.nom,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
                     const SizedBox(height: 2),
                     // Row avec des "pilules" (petits badges arrondis) pour
                     // la contenance et l'usage, plus visuel qu'un simple texte.
                     Row(
                       children: [
-                        _Pilule(texte: '${produit.contenance.toStringAsFixed(0)}${produit.uniteContenance}'),
+                        _Pilule(
+                          texte:
+                              '${produit.contenance.toStringAsFixed(0)}${produit.uniteContenance}',
+                        ),
                         const SizedBox(width: 6),
                         _Pilule(texte: produit.usage),
                       ],
@@ -121,11 +231,16 @@ class _CarteProduit extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: produit.enAlerte ? AppColors.danger : AppColors.succes,
+                      color: produit.enAlerte
+                          ? AppColors.danger
+                          : AppColors.succes,
                     ),
                   ),
                   if (produit.enAlerte)
-                    const Text('Seuil bas', style: TextStyle(fontSize: 10, color: AppColors.danger)),
+                    const Text(
+                      'Seuil bas',
+                      style: TextStyle(fontSize: 10, color: AppColors.danger),
+                    ),
                 ],
               ),
             ],
@@ -138,7 +253,8 @@ class _CarteProduit extends StatelessWidget {
   void _ouvrirFormulaireMouvement(BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => _FormulaireMouvement(produit: produit, stockService: stockService),
+      builder: (_) =>
+          _FormulaireMouvement(produit: produit, stockService: stockService),
     );
   }
 }
@@ -158,7 +274,10 @@ class _Pilule extends StatelessWidget {
         color: AppColors.creme,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(texte, style: const TextStyle(fontSize: 10, color: AppColors.texteSecondaire)),
+      child: Text(
+        texte,
+        style: const TextStyle(fontSize: 10, color: AppColors.texteSecondaire),
+      ),
     );
   }
 }
@@ -170,7 +289,8 @@ class _FormulaireProduitLiquide extends StatefulWidget {
   const _FormulaireProduitLiquide({required this.stockService});
 
   @override
-  State<_FormulaireProduitLiquide> createState() => _FormulaireProduitLiquideState();
+  State<_FormulaireProduitLiquide> createState() =>
+      _FormulaireProduitLiquideState();
 }
 
 class _FormulaireProduitLiquideState extends State<_FormulaireProduitLiquide> {
@@ -222,44 +342,65 @@ class _FormulaireProduitLiquideState extends State<_FormulaireProduitLiquide> {
             children: [
               TextFormField(
                 controller: _nomController,
-                decoration: const InputDecoration(labelText: 'Nom (ex: Citron & Pomme)'),
+                decoration: const InputDecoration(
+                  labelText: 'Nom (ex: Citron & Pomme)',
+                ),
                 // "validator" retourne un message d'erreur (String) si invalide,
                 // ou null si tout va bien. Form.validate() les collecte tous.
-                validator: (v) => (v == null || v.isEmpty) ? 'Champ requis' : null,
+                validator: (v) =>
+                    (v == null || v.isEmpty) ? 'Champ requis' : null,
               ),
               TextFormField(
                 controller: _contenanceController,
                 decoration: const InputDecoration(labelText: 'Contenance (L)'),
                 keyboardType: TextInputType.number,
-                validator: (v) => (v == null || double.tryParse(v) == null) ? 'Nombre invalide' : null,
+                validator: (v) => (v == null || double.tryParse(v) == null)
+                    ? 'Nombre invalide'
+                    : null,
               ),
               TextFormField(
                 controller: _quantiteController,
-                decoration: const InputDecoration(labelText: 'Quantité initiale'),
+                decoration: const InputDecoration(
+                  labelText: 'Quantité initiale',
+                ),
                 keyboardType: TextInputType.number,
-                validator: (v) => (v == null || double.tryParse(v) == null) ? 'Nombre invalide' : null,
+                validator: (v) => (v == null || double.tryParse(v) == null)
+                    ? 'Nombre invalide'
+                    : null,
               ),
               TextFormField(
                 controller: _seuilController,
                 decoration: const InputDecoration(labelText: 'Seuil d\'alerte'),
                 keyboardType: TextInputType.number,
-                validator: (v) => (v == null || double.tryParse(v) == null) ? 'Nombre invalide' : null,
+                validator: (v) => (v == null || double.tryParse(v) == null)
+                    ? 'Nombre invalide'
+                    : null,
               ),
               TextFormField(
                 controller: _usageController,
-                decoration: const InputDecoration(labelText: 'Usage (ex: Ménage, Douche)'),
-                validator: (v) => (v == null || v.isEmpty) ? 'Champ requis' : null,
+                decoration: const InputDecoration(
+                  labelText: 'Usage (ex: Ménage, Douche)',
+                ),
+                validator: (v) =>
+                    (v == null || v.isEmpty) ? 'Champ requis' : null,
               ),
             ],
           ),
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Annuler')),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Annuler'),
+        ),
         ElevatedButton(
           onPressed: _envoi ? null : _enregistrer,
           child: _envoi
-              ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+              ? const SizedBox(
+                  height: 16,
+                  width: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
               : const Text('Ajouter'),
         ),
       ],
@@ -272,7 +413,10 @@ class _FormulaireMouvement extends StatefulWidget {
   final ProduitLiquideModel produit;
   final StockService stockService;
 
-  const _FormulaireMouvement({required this.produit, required this.stockService});
+  const _FormulaireMouvement({
+    required this.produit,
+    required this.stockService,
+  });
 
   @override
   State<_FormulaireMouvement> createState() => _FormulaireMouvementState();
@@ -323,41 +467,63 @@ class _FormulaireMouvementState extends State<_FormulaireMouvement> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Stock actuel : ${widget.produit.quantite.toStringAsFixed(0)}'),
+            Text(
+              'Stock actuel : ${widget.produit.quantite.toStringAsFixed(0)}',
+            ),
             const SizedBox(height: 12),
             SegmentedButton<TypeMouvement>(
               segments: const [
-                ButtonSegment(value: TypeMouvement.entree, label: Text('Entrée')),
-                ButtonSegment(value: TypeMouvement.sortie, label: Text('Sortie')),
+                ButtonSegment(
+                  value: TypeMouvement.entree,
+                  label: Text('Entrée'),
+                ),
+                ButtonSegment(
+                  value: TypeMouvement.sortie,
+                  label: Text('Sortie'),
+                ),
               ],
               selected: {_type},
-              onSelectionChanged: (nouveauSet) => setState(() => _type = nouveauSet.first),
+              onSelectionChanged: (nouveauSet) =>
+                  setState(() => _type = nouveauSet.first),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _quantiteController,
               decoration: const InputDecoration(labelText: 'Quantité'),
               keyboardType: TextInputType.number,
-              validator: (v) => (v == null || double.tryParse(v) == null) ? 'Nombre invalide' : null,
+              validator: (v) => (v == null || double.tryParse(v) == null)
+                  ? 'Nombre invalide'
+                  : null,
             ),
             TextFormField(
               controller: _motifController,
               decoration: const InputDecoration(labelText: 'Motif'),
-              validator: (v) => (v == null || v.isEmpty) ? 'Champ requis' : null,
+              validator: (v) =>
+                  (v == null || v.isEmpty) ? 'Champ requis' : null,
             ),
             if (_erreur != null) ...[
               const SizedBox(height: 8),
-              Text(_erreur!, style: const TextStyle(color: AppColors.danger, fontSize: 12)),
+              Text(
+                _erreur!,
+                style: const TextStyle(color: AppColors.danger, fontSize: 12),
+              ),
             ],
           ],
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Annuler')),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Annuler'),
+        ),
         ElevatedButton(
           onPressed: _envoi ? null : _enregistrer,
           child: _envoi
-              ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+              ? const SizedBox(
+                  height: 16,
+                  width: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
               : const Text('Valider'),
         ),
       ],
